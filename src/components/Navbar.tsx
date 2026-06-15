@@ -1,25 +1,26 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useLocation } from "react-router-dom";
 import { ShoppingBag, Menu } from "lucide-react";
-import { useState } from "react";
-import { useLang } from "@/lib/i18n";
-import { useCart } from "@/lib/cart-store";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/lib/cart-store";
+import { useLang } from "@/lib/i18n";
 
 export function Navbar() {
   const { lang, setLang, t } = useLang();
-  const items = useCart((s) => s.items);
-  const count = items.reduce((a, i) => a + i.qty, 0);
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const count = useCart((state) => state.count());
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
 
-  if (pathname.startsWith("/admin")) return null;
+  const links = useMemo(
+    () => [
+      { to: "/", label: t("nav_home") },
+      { to: "/catalog", label: t("nav_catalog") },
+    ],
+    [t],
+  );
 
-  const links = [
-    { to: "/", label: t("nav_home") },
-    { to: "/catalog", label: t("nav_catalog") },
-    { to: "/admin", label: t("nav_admin") },
-  ];
+  if (pathname.startsWith("/dashboard")) return null;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-lg">
@@ -28,32 +29,30 @@ export function Navbar() {
           H.A <span className="italic font-medium">Collection</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 text-sm">
-          {links.map((l) => (
+        <nav className="hidden items-center gap-8 text-sm md:flex">
+          {links.map((link) => (
             <Link
-              key={l.to}
-              to={l.to}
+              key={link.to}
+              to={link.to}
               className="relative text-foreground/70 transition-colors hover:text-foreground"
-              activeProps={{ className: "text-foreground font-medium" }}
-              activeOptions={{ exact: l.to === "/" }}
             >
-              {l.label}
+              {link.label}
             </Link>
           ))}
         </nav>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <div className="hidden sm:flex items-center text-xs rounded-full border border-border bg-secondary/50 p-0.5">
-            {(["id", "en"] as const).map((l) => (
+          <div className="hidden items-center rounded-full border border-border bg-secondary/50 p-0.5 text-xs sm:flex">
+            {(["id", "en"] as const).map((item) => (
               <button
-                key={l}
-                onClick={() => setLang(l)}
+                key={item}
+                onClick={() => setLang(item)}
                 className={cn(
                   "px-2.5 py-1 rounded-full uppercase tracking-wider transition-all",
-                  lang === l ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                  lang === item ? "bg-primary text-primary-foreground" : "text-muted-foreground",
                 )}
               >
-                {l}
+                {item}
               </button>
             ))}
           </div>
@@ -71,32 +70,33 @@ export function Navbar() {
             variant="ghost"
             size="icon"
             className="md:hidden"
-            onClick={() => setOpen((o) => !o)}
+            onClick={() => setOpen((value) => !value)}
             aria-label="Menu"
           >
             <Menu className="h-5 w-5" />
           </Button>
         </div>
       </div>
+
       {open && (
-        <div className="md:hidden border-t border-border bg-background">
+        <div className="border-t border-border bg-background md:hidden">
           <nav className="flex flex-col px-6 py-4 gap-3 text-sm">
-            {links.map((l) => (
-              <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className="py-1">
-                {l.label}
+            {links.map((link) => (
+              <Link key={link.to} to={link.to} onClick={() => setOpen(false)} className="py-1">
+                {link.label}
               </Link>
             ))}
             <div className="flex items-center gap-2 pt-2">
-              {(["id", "en"] as const).map((l) => (
+              {(["id", "en"] as const).map((item) => (
                 <button
-                  key={l}
-                  onClick={() => setLang(l)}
+                  key={item}
+                  onClick={() => setLang(item)}
                   className={cn(
                     "px-3 py-1 text-xs rounded-full uppercase border border-border",
-                    lang === l && "bg-primary text-primary-foreground border-primary"
+                    lang === item && "bg-primary text-primary-foreground border-primary",
                   )}
                 >
-                  {l}
+                  {item}
                 </button>
               ))}
             </div>
