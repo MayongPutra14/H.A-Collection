@@ -16,7 +16,7 @@ export function useCategories() {
 export function useCreateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) => Promise.resolve(createCategory(name)),
+    mutationFn: (input: { name: string; image_url?: string }) => Promise.resolve(createCategory(input)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: categoryKeys.all }),
   });
 }
@@ -24,8 +24,8 @@ export function useCreateCategory() {
 export function useUpdateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, name }: { id: string; name: string }) =>
-      Promise.resolve(updateCategory(id, name)),
+    mutationFn: ({ id, name, image_url }: { id: string; name: string; image_url?: string }) =>
+      Promise.resolve(updateCategory(id, name, image_url)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: categoryKeys.all }),
   });
 }
