@@ -12,6 +12,7 @@ export type Product = {
   material?: string;
   sizes?: string[];
   archived?: boolean;
+  categories?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -22,10 +23,7 @@ export type ProductFilters = {
   includeArchived?: boolean;
 };
 
-export type CreateProductInput = Omit<
-  Product,
-  "id" | "createdAt" | "updatedAt" | "image_url"
-> & {
+export type CreateProductInput = Omit<Product, "id" | "createdAt" | "updatedAt" | "image_url"> & {
   image_url?: string;
 };
 

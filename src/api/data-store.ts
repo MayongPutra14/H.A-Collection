@@ -1,4 +1,5 @@
 import { SHOPEE_BASE_URL } from "@/lib/config";
+import { supabase } from "@/lib/supabase";
 import type { Banner, Category, StoreSettings } from "@/types/admin";
 import type { Product } from "@/types/product";
 
