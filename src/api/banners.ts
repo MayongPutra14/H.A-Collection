@@ -1,12 +1,51 @@
-import { readBanners, writeBanners } from "@/api/data-store";
+import { supabase } from "@/lib/supabase";
 import type { Banner, BannerStatus } from "@/types/admin";
 
-export const listBanners = () =>
-  readBanners().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+export const listBanners = async (): Promise<Banner[]> => {
+  const { data, error } = await supabase.from("banners").select("*");
+  if (error) {
+    throw new Error(`Failed to fecth banner: ${error?.message}`);
+  }
+  if (!data) return [];
 
-export const getActiveBanner = () => listBanners().find((banner) => banner.status === "Active");
+  return data.map((item) => ({
+    id: String(item.id),
+    title: item.title,
+    titleEn: item.title_en ?? undefined,
+    subtitle: item.subtitle ?? "",
+    subtitleEn: item.subtitle_en ?? undefined,
+    description: item.description ?? "",
+    descriptionEn: item.description_en ?? undefined,
+    image_url: item.image_url,
+    status: item.status as BannerStatus,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at,
+  }));
+};
 
-export const createBanner = (input: {
+export const getActiveBanner = async (): Promise<Banner[]> => {
+  const { data, error } = await supabase.from("banners").select("*").eq("status", "Active");
+  if (error) {
+    throw new Error(`Failed to fetch banners: ${error?.message}`);
+  }
+  if (!data) return [];
+
+  return data.map((item) => ({
+    id: String(item.id),
+    title: item.title,
+    titleEn: item.title_en ?? undefined,
+    subtitle: item.subtitle ?? "",
+    subtitleEn: item.subtitle_en ?? undefined,
+    description: item.description ?? "",
+    descriptionEn: item.description_en ?? undefined,
+    image_url: item.image_url,
+    status: item.status as BannerStatus,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at,
+  }));
+};
+
+export const createBanner = async (input: {
   title: string;
   titleEn?: string;
   subtitle: string;
@@ -14,28 +53,40 @@ export const createBanner = (input: {
   description: string;
   descriptionEn?: string;
   image_url: string;
-}): Banner => {
-  const banners = readBanners();
-  const timestamp = new Date().toISOString();
-  const banner: Banner = {
-    id: `banner-${Date.now()}`,
-    title: input.title.trim(),
-    titleEn: input.titleEn?.trim() || undefined,
-    subtitle: input.subtitle.trim(),
-    subtitleEn: input.subtitleEn?.trim() || undefined,
-    description: input.description.trim(),
-    descriptionEn: input.descriptionEn?.trim() || undefined,
-    image_url: input.image_url.trim(),
-    status: "Active",
-    createdAt: timestamp,
-    updatedAt: timestamp,
+}): Promise<Banner> => {
+  const { data, error } = await supabase
+    .from("banners")
+    .insert({
+      title: input.title,
+      title_en: input.titleEn,
+      subtitle: input.subtitle,
+      subtitle_en: input.subtitleEn,
+      description: input.description,
+      description_en: input.descriptionEn,
+      image_url: input.image_url,
+    })
+    .select()
+    .single();
+
+  if (error || !data) throw new Error(`Failed to create banner ${error?.message}`);
+
+  return {
+    id: String(data.id),
+    title: data.title,
+    titleEn: data.title_en ?? undefined,
+    subtitle: data.subtitle ?? "",
+    subtitleEn: data.subtitle_en ?? undefined,
+    description: data.description ?? "",
+    descriptionEn: data.description_en ?? undefined,
+    image_url: data.image_url,
+    status: data.status as BannerStatus,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
   };
-  writeBanners([banner, ...banners]);
-  return banner;
 };
 
-export const updateBanner = (
-  id: string,
+export const updateBanner = async (
+  id: number,
   input: {
     title?: string;
     titleEn?: string;
@@ -46,26 +97,31 @@ export const updateBanner = (
     image_url?: string;
     status?: BannerStatus;
   },
-): Banner => {
-  const banners = readBanners();
-  const timestamp = new Date().toISOString();
-  const nextBanners = banners.map((banner) =>
-    banner.id === id
-      ? {
-          ...banner,
-          ...input,
-          updatedAt: timestamp,
-        }
-      : banner,
-  );
-  writeBanners(nextBanners);
-  const updated = nextBanners.find((banner) => banner.id === id);
-  if (!updated) throw new Error("Banner not found");
-  return updated;
+): Promise<void> => {
+  const { data, error } = await supabase
+    .from("banners")
+    .update({
+      title: input.title,
+      title_en: input.titleEn,
+      subtitle: input.subtitle,
+      subtitle_en: input.subtitleEn,
+      description: input.description,
+      description_en: input.descriptionEn,
+      image_url: input.image_url,
+      status: input.status,
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error || !data) throw new Error(`Failed to update banner: ${error?.message}`);
 };
 
-export const toggleBanner = (id: string, status: BannerStatus) => updateBanner(id, { status });
+export const toggleBanner = async (id: number, status: BannerStatus): Promise<void> => {
+  await updateBanner(id, { status });
+};
 
-export const deleteBanner = (id: string) => {
-  writeBanners(readBanners().filter((banner) => banner.id !== id));
+export const deleteBanner = async (id: number): Promise<void> => {
+  const { error } = await supabase.from("banners").delete().eq("id", id);
+  if (error) throw new Error(`Failed to delete banner: ${error.message}`);
 };

@@ -1,4 +1,3 @@
-import { readProducts, writeProducts } from "@/api/data-store";
 import { supabase } from "@/lib/supabase";
 import type {
   CreateProductInput,
@@ -22,11 +21,29 @@ export const listProducts = async (filters: ProductFilters = {}): Promise<Produc
   }
 
   const { data, error } = await query.order("name", { ascending: true });
-  if (error) {
-    console.error("failed fetch prducts: ", error.message);
+  if (error || !data) {
+    console.error("Gagal mengambil produk:", error?.message);
+    return [];
   }
 
-  return data as unknown as Product[];
+  return data.map((item) => ({
+    id: String(item.id),
+    name: item.name,
+    description: {
+      id: item.description_id || "",
+      en: item.description_en || "",
+    },
+    price: Number(item.price),
+    image_url: item.image_url || "",
+    images: item.images ? JSON.parse(item.images) : [],
+    shopee_url: item.shopee_url || "",
+    material: item.material || "",
+    sizes: item.sizes || [],
+    archived: item.archived,
+    category: String(item.categories),
+    createdAt: item.created_at,
+    updatedAt: item.updated_at,
+  }));
 };
 
 export const getProductById = async (id: string): Promise<Product | null> => {
@@ -51,21 +68,33 @@ export const createProduct = async (input: CreateProductInput): Promise<Product>
       description_id: input.description.id,
       description_en: input.description.en,
       price: input.price,
-      image_url: input.image_url,
+      image_url: input.images?.[0] || input.image_url || "",
       images: JSON.stringify(input.images),
       shopee_url: input.shopee_url,
       material: input.material,
       sizes: input.sizes,
-      categories: input.categories,
+      categories: Number(input.categories),
       archived: input.archived,
     })
     .select()
     .single();
 
-  if (error) {
-    throw new Error(error.message);
-  }
-  return data as unknown as Product;
+  if (error || !data) throw new Error(`Failed to create product: ${error?.message}`);
+  return {
+    id: String(data.id),
+    name: data.name,
+    description: { id: data.description_id || "", en: data.description_en || "" },
+    price: Number(data.price),
+    image_url: data.image_url || "",
+    images: data.images ? JSON.parse(data.images) : [],
+    shopee_url: data.shopee_url || "",
+    material: data.material || "",
+    sizes: data.sizes || [],
+    archived: data.archived,
+    category: String(data.categories),
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
 };
 
 export const updateProduct = async (id: string, input: UpdateProductInput): Promise<Product> => {
@@ -87,16 +116,16 @@ export const updateProduct = async (id: string, input: UpdateProductInput): Prom
   return data as unknown as Product;
 };
 
-export const archiveProduct = async (id: string, archived: boolean) => {
+export const archiveProduct = async (id: string, archived: boolean): Promise<void> => {
   const { error } = await supabase.from("products").update({ archived }).eq("id", id);
   if (error) {
-    throw new Error(error.message);
+    throw new Error(`Failed to archive product: ${error.message}`);
   }
 };
 
-export const deleteProduct = async (id: string) => {
+export const deleteProduct = async (id: string): Promise<void> => {
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) {
-    throw new Error(error.message);
+    throw new Error(`Failed to delete product: ${error.message}`);
   }
 };

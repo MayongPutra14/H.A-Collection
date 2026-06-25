@@ -8,7 +8,18 @@ export const getSettings = async (): Promise<StoreSettings | null> => {
     console.error("Gagal mengambil settings:", error.message);
     return null;
   }
-  return data as unknown as StoreSettings;
+
+  if (!data || data.length === 0) return null;
+
+  return {
+    adminWhatsApp: data.admin_whatsapp || "",
+    shopeeStoreUrl: data.shopee_store_url || "",
+    shopeeUrl: data.shopee_url || "",
+    tiktokUrl: data.tiktok_url || "",
+    instagramUrl: data.instagram_url || "",
+    facebookUrl: data.facebook_url || "",
+    updatedAt: data.updated_at || new Date().toISOString(),
+  };
 };
 
 export const saveSettings = async (
@@ -24,8 +35,17 @@ export const saveSettings = async (
     .single();
 
   if (error) {
-    console.error("Gagal menyimpan settings:", error.message);
-    throw new Error(error.message);
+    throw new Error(`Gagal menyimpan settings: ${error.message}`);
   }
-  return data as unknown as StoreSettings;
+
+  if (!data || data.length === 0) return null;
+  return {
+    adminWhatsApp: data.admin_whatsapp || "",
+    shopeeStoreUrl: data.shopee_store_url || "",
+    shopeeUrl: data.shopee_url || "",
+    tiktokUrl: data.tiktok_url || "",
+    instagramUrl: data.instagram_url || "",
+    facebookUrl: data.facebook_url || "",
+    updatedAt: data.updated_at || new Date().toISOString(),
+  };
 };
