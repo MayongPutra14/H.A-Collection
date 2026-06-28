@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createBanner, deleteBanner, listBanners, toggleBanner, updateBanner } from "@/api/banners";
+import { createBanner, deleteBanner, getActiveBanner, listBanners, toggleBanner, updateBanner } from "@/api/banners";
 import type { BannerStatus } from "@/types/admin";
 
 export const bannerKeys = {
@@ -11,6 +11,13 @@ export function useBanners() {
   return useQuery({
     queryKey: bannerKeys.lists(),
     queryFn: listBanners,
+  });
+}
+
+export function useActiveBanners() {
+  return useQuery({
+    queryKey: [...bannerKeys.all, "active"],
+    queryFn: getActiveBanner,
   });
 }
 

@@ -22,9 +22,30 @@ import {
   useToggleBanner,
   useUpdateBanner,
 } from "@/hooks/use-banners";
+import { uploadImage } from "@/api/storage";
 import type { Banner } from "@/types/admin";
 
-const emptyForm = { title: "", titleEn: "", subtitle: "", subtitleEn: "", description: "", descriptionEn: "", image_url: "" };
+type FormState = {
+  title: string;
+  titleEn: string;
+  subtitle: string;
+  subtitleEn: string;
+  description: string;
+  descriptionEn: string;
+  imageFile: File | null;
+  existingImageUrl: string;
+};
+
+const emptyForm: FormState = {
+  title: "",
+  titleEn: "",
+  subtitle: "",
+  subtitleEn: "",
+  description: "",
+  descriptionEn: "",
+  imageFile: null,
+  existingImageUrl: "",
+};
 
 export function BannersPage() {
   const { data: banners = [] } = useBanners();
@@ -34,7 +55,8 @@ export function BannersPage() {
   const deleteBanner = useDeleteBanner();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Banner | null>(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<FormState>(emptyForm);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (editing) {
@@ -45,7 +67,8 @@ export function BannersPage() {
         subtitleEn: editing.subtitleEn || "",
         description: editing.description || "",
         descriptionEn: editing.descriptionEn || "",
-        image_url: editing.image_url,
+        imageFile: null,
+        existingImageUrl: editing.image_url,
       });
     } else {
       setForm(emptyForm);
@@ -62,51 +85,69 @@ export function BannersPage() {
     setOpen(true);
   };
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!form.title.trim() || !form.image_url) return;
+    if (!form.title.trim() || (!form.imageFile && !form.existingImageUrl)) return;
 
-    if (editing) {
-      updateBanner.mutate(
-        {
-          id: editing.id,
-          input: {
+    setIsSubmitting(true);
+
+    let imageUrl = form.existingImageUrl;
+    if (form.imageFile) {
+      try {
+        imageUrl = await uploadImage(form.imageFile, "uploads", "banners");
+      } catch {
+        toast.error("Failed to upload image");
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    const handleSubmit = (isEdit: boolean) => {
+      if (isEdit && editing) {
+        updateBanner.mutate(
+          {
+            id: editing.id,
+            input: {
+              title: form.title.trim(),
+              titleEn: form.titleEn.trim() || undefined,
+              subtitle: form.subtitle.trim(),
+              subtitleEn: form.subtitleEn.trim() || undefined,
+              description: form.description.trim(),
+              descriptionEn: form.descriptionEn.trim() || undefined,
+              image_url: imageUrl,
+            },
+          },
+          {
+            onSuccess: () => {
+              setOpen(false);
+              toast.success("Banner updated");
+            },
+            onSettled: () => setIsSubmitting(false),
+          },
+        );
+      } else {
+        createBanner.mutate(
+          {
             title: form.title.trim(),
             titleEn: form.titleEn.trim() || undefined,
             subtitle: form.subtitle.trim(),
             subtitleEn: form.subtitleEn.trim() || undefined,
             description: form.description.trim(),
             descriptionEn: form.descriptionEn.trim() || undefined,
-            image_url: form.image_url,
+            image_url: imageUrl,
           },
-        },
-        {
-          onSuccess: () => {
-            setOpen(false);
-            toast.success("Banner updated");
+          {
+            onSuccess: () => {
+              setOpen(false);
+              toast.success("Banner added");
+            },
+            onSettled: () => setIsSubmitting(false),
           },
-        },
-      );
-      return;
-    }
+        );
+      }
+    };
 
-    createBanner.mutate(
-      {
-        title: form.title.trim(),
-        titleEn: form.titleEn.trim() || undefined,
-        subtitle: form.subtitle.trim(),
-        subtitleEn: form.subtitleEn.trim() || undefined,
-        description: form.description.trim(),
-        descriptionEn: form.descriptionEn.trim() || undefined,
-        image_url: form.image_url,
-      },
-      {
-        onSuccess: () => {
-          setOpen(false);
-          toast.success("Banner added");
-        },
-      },
-    );
+    handleSubmit(!!editing);
   };
 
   return (
@@ -189,69 +230,72 @@ export function BannersPage() {
             <DialogTitle>{editing ? "Edit Banner" : "Add Banner"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={submit} className="space-y-4">
-<div>
-               <Label>Banner Title</Label>
-               <Input
-                 value={form.title}
-                 onChange={(event) => setForm({ ...form, title: event.target.value })}
-                 placeholder="New Season Collection"
-               />
-             </div>
-             <div>
-               <Label>Banner Title (English)</Label>
-               <Input
-                 value={form.titleEn}
-                 onChange={(event) => setForm({ ...form, titleEn: event.target.value })}
-                 placeholder="New Season Collection"
-               />
-             </div>
-             <div>
-               <Label>Banner Subtitle</Label>
-               <Input
-                 value={form.subtitle}
-                 onChange={(event) => setForm({ ...form, subtitle: event.target.value })}
-                 placeholder="Subtitle banner..."
-               />
-             </div>
-             <div>
-               <Label>Banner Subtitle (English)</Label>
-               <Input
-                 value={form.subtitleEn}
-                 onChange={(event) => setForm({ ...form, subtitleEn: event.target.value })}
-                 placeholder="Banner subtitle..."
-               />
-             </div>
-             <div>
-               <Label>Banner Description</Label>
-               <Textarea
-                 value={form.description}
-                 onChange={(event) => setForm({ ...form, description: event.target.value })}
-                 placeholder="Deskripsi banner..."
-                 rows={3}
-               />
-             </div>
-             <div>
-               <Label>Banner Description (English)</Label>
-               <Textarea
-                 value={form.descriptionEn}
-                 onChange={(event) => setForm({ ...form, descriptionEn: event.target.value })}
-                 placeholder="Banner description..."
-                 rows={3}
-               />
-             </div>
-             <div>
-               <Label>Banner Image</Label>
+            <div>
+              <Label>Banner Title</Label>
+              <Input
+                value={form.title}
+                onChange={(event) => setForm({ ...form, title: event.target.value })}
+                placeholder="New Season Collection"
+              />
+            </div>
+            <div>
+              <Label>Banner Title (English)</Label>
+              <Input
+                value={form.titleEn}
+                onChange={(event) => setForm({ ...form, titleEn: event.target.value })}
+                placeholder="New Season Collection"
+              />
+            </div>
+            <div>
+              <Label>Banner Subtitle</Label>
+              <Input
+                value={form.subtitle}
+                onChange={(event) => setForm({ ...form, subtitle: event.target.value })}
+                placeholder="Subtitle banner..."
+              />
+            </div>
+            <div>
+              <Label>Banner Subtitle (English)</Label>
+              <Input
+                value={form.subtitleEn}
+                onChange={(event) => setForm({ ...form, subtitleEn: event.target.value })}
+                placeholder="Banner subtitle..."
+              />
+            </div>
+            <div>
+              <Label>Banner Description</Label>
+              <Textarea
+                value={form.description}
+                onChange={(event) => setForm({ ...form, description: event.target.value })}
+                placeholder="Deskripsi banner..."
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label>Banner Description (English)</Label>
+              <Textarea
+                value={form.descriptionEn}
+                onChange={(event) => setForm({ ...form, descriptionEn: event.target.value })}
+                placeholder="Banner description..."
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label>Banner Image</Label>
               <ImageUploader
-                value={form.image_url ? [form.image_url] : []}
-                onChange={(images) => setForm({ ...form, image_url: images[0] || "" })}
-                label="Upload banner image"
+                files={form.imageFile ? [form.imageFile] : []}
+                onChange={(files) => setForm({ ...form, imageFile: files[0] || null })}
+                existingUrls={form.existingImageUrl ? [form.existingImageUrl] : []}
+                onRemoveUrl={() => setForm({ ...form, existingImageUrl: "", imageFile: null })}
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit">{editing ? "Update Banner" : "Submit"}</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : editing ? "Update Banner" : "Submit"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

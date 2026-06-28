@@ -4,7 +4,8 @@ import type { Banner, BannerStatus } from "@/types/admin";
 export const listBanners = async (): Promise<Banner[]> => {
   const { data, error } = await supabase.from("banners").select("*");
   if (error) {
-    throw new Error(`Failed to fecth banner: ${error?.message}`);
+    console.error("Failed to fetch banners:", error.message);
+    return [];
   }
   if (!data) return [];
 
@@ -26,7 +27,8 @@ export const listBanners = async (): Promise<Banner[]> => {
 export const getActiveBanner = async (): Promise<Banner[]> => {
   const { data, error } = await supabase.from("banners").select("*").eq("status", "Active");
   if (error) {
-    throw new Error(`Failed to fetch banners: ${error?.message}`);
+    console.error("Failed to fetch active banners:", error.message);
+    return [];
   }
   if (!data) return [];
 
@@ -86,7 +88,7 @@ export const createBanner = async (input: {
 };
 
 export const updateBanner = async (
-  id: number,
+  id: string | number,
   input: {
     title?: string;
     titleEn?: string;
@@ -110,18 +112,18 @@ export const updateBanner = async (
       image_url: input.image_url,
       status: input.status,
     })
-    .eq("id", id)
+    .eq("id", Number(id))
     .select()
     .single();
 
   if (error || !data) throw new Error(`Failed to update banner: ${error?.message}`);
 };
 
-export const toggleBanner = async (id: number, status: BannerStatus): Promise<void> => {
+export const toggleBanner = async (id: string | number, status: BannerStatus): Promise<void> => {
   await updateBanner(id, { status });
 };
 
-export const deleteBanner = async (id: number): Promise<void> => {
-  const { error } = await supabase.from("banners").delete().eq("id", id);
+export const deleteBanner = async (id: string | number): Promise<void> => {
+  const { error } = await supabase.from("banners").delete().eq("id", Number(id));
   if (error) throw new Error(`Failed to delete banner: ${error.message}`);
 };

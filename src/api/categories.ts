@@ -7,10 +7,12 @@ export const listCategories = async (): Promise<Category[]> => {
     .select("*")
     .order("name", { ascending: true });
 
-  if (error || !data || data.length === 0) {
+  if (error) {
     console.error("Failed to fetch categories:", error?.message);
     return [];
   }
+
+  if (!data) return [];
 
   return data.map((item) => ({
     id: String(item.id),
@@ -36,7 +38,7 @@ export const createCategory = async (input: {
     .select()
     .single();
 
-  if (error || !data || data.length === 0) {
+  if (error || !data) {
     throw new Error(`Failed to create category ${error?.message}`);
   }
 
@@ -50,7 +52,7 @@ export const createCategory = async (input: {
 };
 
 export const updateCategory = async (
-  id: number,
+  id: string | number,
   name: string,
   image_url?: string,
 ): Promise<Category> => {
@@ -61,11 +63,11 @@ export const updateCategory = async (
       image_url: image_url?.trim() || null,
       updated_at: new Date().toISOString(),
     })
+    .eq("id", Number(id))
     .select()
-    .eq("id", id)
     .single();
 
-  if (error || !data || data.length === 0) {
+  if (error || !data) {
     throw new Error(`Failed to update category ${error?.message}`);
   }
 
@@ -78,10 +80,10 @@ export const updateCategory = async (
   };
 };
 
-export const deleteCategory = async (id: number): Promise<void> => {
-  const { error } = await supabase.from("categories").delete().eq("id", id);
+export const deleteCategory = async (id: string | number): Promise<void> => {
+  const { error } = await supabase.from("categories").delete().eq("id", Number(id));
 
   if (error) {
-    throw new Error(`Failed to delete category${error.message}`);
+    throw new Error(`Failed to delete category: ${error.message}`);
   }
 };

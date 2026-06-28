@@ -27,11 +27,7 @@ export function useProducts(filters: ProductFilters = {}) {
 export function useProductById(id: string) {
   return useQuery({
     queryKey: productKeys.detail(id),
-    queryFn: () => {
-      const product = getProductById(id);
-      if (!product) throw new Error("Product not found");
-      return product;
-    },
+    queryFn: () => getProductById(id),
   });
 }
 
