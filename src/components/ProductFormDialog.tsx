@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { ImageUploader } from "@/components/ImageUploader";
 import { toNumber } from "@/lib/format";
+import { uploadImage } from "@/api/storage";
 import type { CreateProductInput, Product, ProductCategory } from "@/types/product";
 
 type Props = {
@@ -33,7 +34,8 @@ type FormState = {
   name: string;
   description: string;
   price: string;
-  images: string[];
+  imageFiles: File[];
+  existingImages: string[];
   shopee_url: string;
   category: string;
   material: string;
@@ -44,7 +46,8 @@ const emptyForm: FormState = {
   name: "",
   description: "",
   price: "",
-  images: [],
+  imageFiles: [],
+  existingImages: [],
   shopee_url: "",
   category: "Casual",
   material: "",
@@ -55,6 +58,7 @@ export function ProductFormDialog({ open, onOpenChange, categories, product, onS
   const [form, setForm] = useState<FormState>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
+  const allImages = [...form.existingImages, ...form.imageFiles];
 
   useEffect(() => {
     if (product) {
@@ -62,7 +66,8 @@ export function ProductFormDialog({ open, onOpenChange, categories, product, onS
         name: product.name,
         description: product.description.id,
         price: String(product.price),
-        images: product.images,
+        imageFiles: [],
+        existingImages: product.images,
         shopee_url: product.shopee_url,
         category: product.category,
         material: product.material || "",
@@ -81,7 +86,7 @@ export function ProductFormDialog({ open, onOpenChange, categories, product, onS
     if (form.name.trim().length < 2) nextErrors.name = "Name is required";
     if (form.description.trim().length < 10) nextErrors.description = "Description is required";
     if (toNumber(form.price) <= 0) nextErrors.price = "Price must be greater than 0";
-    if (!form.images.length) nextErrors.images = "Upload at least one image";
+    if (!allImages.length) nextErrors.images = "Upload at least one image";
     if (form.shopee_url.trim() && !/^https?:\/\//i.test(form.shopee_url.trim())) {
       nextErrors.shopee_url = "Use a valid Shopee URL";
     }
@@ -92,11 +97,26 @@ export function ProductFormDialog({ open, onOpenChange, categories, product, onS
     }
 
     setPending(true);
+
+    let uploadedUrls = [...form.existingImages];
+    if (form.imageFiles.length > 0) {
+      try {
+        uploadedUrls = await Promise.all(
+          form.imageFiles.map((file) => uploadImage(file, "uploads", "products")),
+        );
+        uploadedUrls = [...form.existingImages, ...uploadedUrls];
+      } catch (err) {
+        setErrors({ images: err instanceof Error ? err.message : "Upload failed" });
+        setPending(false);
+        return;
+      }
+    }
+
     await onSubmit({
       name: form.name.trim(),
       description: { id: form.description.trim(), en: form.description.trim() },
       price: toNumber(form.price),
-      images: form.images,
+      images: uploadedUrls,
       shopee_url: form.shopee_url.trim(),
       category: form.category as ProductCategory,
       material: form.material.trim() || undefined,
@@ -121,8 +141,15 @@ export function ProductFormDialog({ open, onOpenChange, categories, product, onS
             <div className="sm:col-span-2">
               <Label>Images</Label>
               <ImageUploader
-                value={form.images}
-                onChange={(images) => setForm({ ...form, images })}
+                files={form.imageFiles}
+                onChange={(files) => setForm({ ...form, imageFiles: files })}
+                existingUrls={form.existingImages}
+                onRemoveUrl={(index) =>
+                  setForm({
+                    ...form,
+                    existingImages: form.existingImages.filter((_, i) => i !== index),
+                  })
+                }
               />
               {errors.images && <p className="text-sm text-destructive">{errors.images}</p>}
             </div>

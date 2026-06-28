@@ -17,7 +17,7 @@ export const listProducts = async (filters: ProductFilters = {}): Promise<Produc
   }
 
   if (filters.query) {
-    query = query.ilike("name", `%${filters.query}`);
+    query = query.ilike("name", `%${filters.query}%`);
   }
 
   const { data, error } = await query.order("name", { ascending: true });
@@ -51,13 +51,30 @@ export const getProductById = async (id: string): Promise<Product | null> => {
     .from("products")
     .select("*")
     .eq("id", id)
-    .eq("archived", false)
     .single();
 
   if (error) {
     console.error("Product not found:", error.message);
+    return null;
   }
-  return data as unknown as Product;
+
+  if (!data) return null;
+
+  return {
+    id: String(data.id),
+    name: data.name,
+    description: { id: data.description_id || "", en: data.description_en || "" },
+    price: Number(data.price),
+    image_url: data.image_url || "",
+    images: data.images ? JSON.parse(data.images) : [],
+    shopee_url: data.shopee_url || "",
+    material: data.material || "",
+    sizes: data.sizes || [],
+    archived: data.archived,
+    category: String(data.categories),
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
 };
 
 export const createProduct = async (input: CreateProductInput): Promise<Product> => {
@@ -73,8 +90,8 @@ export const createProduct = async (input: CreateProductInput): Promise<Product>
       shopee_url: input.shopee_url,
       material: input.material,
       sizes: input.sizes,
-      categories: Number(input.categories),
-      archived: input.archived,
+      categories: input.category,
+      archived: input.archived ?? false,
     })
     .select()
     .single();
@@ -101,19 +118,39 @@ export const updateProduct = async (id: string, input: UpdateProductInput): Prom
   const { data, error } = await supabase
     .from("products")
     .update({
-      ...input,
+      name: input.name,
+      description_id: input.description?.id,
+      description_en: input.description?.en,
+      price: input.price,
       image_url: input.images?.[0] || input.image_url,
       images: input.images ? JSON.stringify(input.images) : undefined,
+      shopee_url: input.shopee_url,
+      material: input.material,
+      sizes: input.sizes,
+      categories: input.category,
+      archived: input.archived,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
     .select()
     .single();
 
-  if (error) {
-    throw new Error(error?.message);
-  }
-  return data as unknown as Product;
+  if (error || !data) throw new Error(error?.message);
+  return {
+    id: String(data.id),
+    name: data.name,
+    description: { id: data.description_id || "", en: data.description_en || "" },
+    price: Number(data.price),
+    image_url: data.image_url || "",
+    images: data.images ? JSON.parse(data.images) : [],
+    shopee_url: data.shopee_url || "",
+    material: data.material || "",
+    sizes: data.sizes || [],
+    archived: data.archived,
+    category: String(data.categories),
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
 };
 
 export const archiveProduct = async (id: string, archived: boolean): Promise<void> => {

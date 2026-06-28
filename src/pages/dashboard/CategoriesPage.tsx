@@ -18,6 +18,7 @@ import {
   useCategories,
   useUpdateCategory,
 } from "@/hooks/use-categories";
+import { uploadImage } from "@/api/storage";
 import type { Category } from "@/types/admin";
 
 export function CategoriesPage() {
@@ -26,65 +27,56 @@ export function CategoriesPage() {
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
   const [name, setName] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [existingImageUrl, setExistingImageUrl] = useState("");
   const [editing, setEditing] = useState<Category | null>(null);
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (editing) {
       setName(editing.name);
-      setImageUrl(editing.image_url || "");
+      setExistingImageUrl(editing.image_url || "");
     } else {
       setName("");
-      setImageUrl("");
+      setExistingImageUrl("");
+      setImageFile(null);
     }
-  }, [editing]);
+  }, [editing, open]);
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!name.trim()) return;
-
-    if (
-      categories.some(
-        (category) =>
-          category.name.toLowerCase() === name.trim().toLowerCase() && category.id !== editing?.id,
-      )
-    ) {
-      toast.error("Category already exists");
-      return;
-    }
-
-    createCategory.mutate(
-      { name: name.trim(), image_url: imageUrl || undefined },
-      {
-        onSuccess: () => {
-          setName("");
-          setImageUrl("");
-          toast.success("Category added");
-        },
-      },
-    );
-  };
-
-  const startEdit = (category: Category) => {
-    setEditing(category);
-    setName(category.name);
-    setImageUrl(category.image_url || "");
+  const handleAddNew = () => {
+    setEditing(null);
     setOpen(true);
   };
 
-  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleEdit = (category: Category) => {
+    setEditing(category);
+    setExistingImageUrl(category.image_url || "");
+    setOpen(true);
+  };
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!name.trim()) return;
 
-    if (
-      categories.some(
-        (category) =>
-          category.name.toLowerCase() === name.trim().toLowerCase() && category.id !== editing?.id,
-      )
-    ) {
+    if (categories.some(
+      (cat) => cat.name.toLowerCase() === name.trim().toLowerCase() && cat.id !== editing?.id,
+    )) {
       toast.error("Category already exists");
       return;
+    }
+
+    setIsSubmitting(true);
+
+    let imageUrl = existingImageUrl;
+    if (imageFile) {
+      try {
+        imageUrl = await uploadImage(imageFile, "uploads", "categories");
+      } catch {
+        toast.error("Failed to upload image");
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     if (editing) {
@@ -93,56 +85,35 @@ export function CategoriesPage() {
         {
           onSuccess: () => {
             setOpen(false);
-            setEditing(null);
-            setName("");
-            setImageUrl("");
             toast.success("Category updated");
           },
+          onSettled: () => setIsSubmitting(false),
+        },
+      );
+    } else {
+      createCategory.mutate(
+        { name: name.trim(), image_url: imageUrl || undefined },
+        {
+          onSuccess: () => {
+            setOpen(false);
+            toast.success("Category added");
+          },
+          onSettled: () => setIsSubmitting(false),
         },
       );
     }
   };
 
-  const handleAddCategory = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!name.trim()) return;
-
-    if (categories.some((category) => category.name.toLowerCase() === name.trim().toLowerCase())) {
-      toast.error("Category already exists");
-      return;
-    }
-
-    createCategory.mutate(
-      { name: name.trim(), image_url: imageUrl || undefined },
-      {
-        onSuccess: () => {
-          setName("");
-          setImageUrl("");
-          toast.success("Category added");
-        },
-      },
-    );
-  };
-
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-3xl">Categories</h1>
-        <p className="text-sm text-muted-foreground mt-1">Manage product category labels.</p>
-      </div>
-
-      <div className="rounded-xl border border-border bg-card p-4">
-        <form onSubmit={submit} className="flex flex-col gap-3 sm:flex-row">
-          <Input
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="Add new category"
-            className="min-w-0 flex-1"
-          />
-          <Button type="submit" className="whitespace-nowrap">
-            <Plus className="mr-2 h-4 w-4" /> Add New Category
-          </Button>
-        </form>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-serif text-3xl">Categories</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage product category labels.</p>
+        </div>
+        <Button onClick={handleAddNew}>
+          <Plus className="mr-2 h-4 w-4" /> Add New Category
+        </Button>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -153,7 +124,7 @@ export function CategoriesPage() {
           >
             <span className="font-medium">{category.name}</span>
             <div className="flex gap-2">
-              <Button variant="ghost" size="icon" onClick={() => startEdit(category)}>
+              <Button variant="ghost" size="icon" onClick={() => handleEdit(category)}>
                 <Pencil className="h-4 w-4" />
               </Button>
               <Button
@@ -177,28 +148,32 @@ export function CategoriesPage() {
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Category" : "Add Category"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleFormSubmit} className="space-y-4">
+          <form onSubmit={submit} className="space-y-4">
             <div>
               <Label>Category Name</Label>
               <Input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 placeholder="Category name"
+                disabled={isSubmitting}
               />
             </div>
             <div>
               <Label>Category Image</Label>
               <ImageUploader
-                value={imageUrl ? [imageUrl] : []}
-                onChange={(images) => setImageUrl(images[0] || "")}
-                label="Upload category image"
+                files={imageFile ? [imageFile] : []}
+                onChange={(files) => setImageFile(files[0] || null)}
+                existingUrls={existingImageUrl ? [existingImageUrl] : []}
+                onRemoveUrl={() => setExistingImageUrl("")}
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit">{editing ? "Update" : "Save"}</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : editing ? "Update" : "Save"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

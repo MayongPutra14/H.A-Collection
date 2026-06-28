@@ -16,3 +16,11 @@ export const SOCIAL_LINKS = {
 };
 
 export const SHOPEE_BASE_URL = "https://shopee.co.id/";
+
+export const STORAGE_BUCKET = "uploads";
+
+export const STORAGE_FOLDERS = {
+  products: "products",
+  categories: "categories",
+  banners: "banners",
+} as const;

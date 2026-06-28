@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { logoutAdmin } from "@/auth/ProtectedRoute";
+import { useSignOut } from "@/hooks/use-auth";
 
 const nav = [
   { to: "/dashboard/overview", label: "Overview", icon: LayoutDashboard },
@@ -32,6 +32,7 @@ function isActivePath(pathname: string, to: string) {
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { pathname } = useLocation();
+  const signOut = useSignOut();
 
   return (
     <div className="flex h-full flex-col">
@@ -76,13 +77,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <Button
           variant="ghost"
           className="w-full justify-start text-primary-foreground/70 hover:text-destructive"
-          onClick={() => {
-            onNavigate?.();
-            logoutAdmin();
-            window.location.href = "/dashboard/login";
-          }}
+          onClick={() => signOut.mutate()}
+          disabled={signOut.isPending}
         >
-          <LogOut className="mr-2 h-4 w-4" /> Logout
+          <LogOut className="mr-2 h-4 w-4" />
+          {signOut.isPending ? "Logging out..." : "Logout"}
         </Button>
       </div>
     </div>

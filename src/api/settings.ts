@@ -4,12 +4,24 @@ import type { StoreSettings } from "@/types/admin";
 export const getSettings = async (): Promise<StoreSettings | null> => {
   const { data, error } = await supabase.from("store_settings").select("*").single();
 
+  if (error?.code === "PGRST116") {
+    return {
+      adminWhatsApp: "",
+      shopeeStoreUrl: "",
+      shopeeUrl: "",
+      tiktokUrl: "",
+      instagramUrl: "",
+      facebookUrl: "",
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
   if (error) {
     console.error("Gagal mengambil settings:", error.message);
     return null;
   }
 
-  if (!data || data.length === 0) return null;
+  if (!data) return null;
 
   return {
     adminWhatsApp: data.admin_whatsapp || "",
@@ -38,7 +50,7 @@ export const saveSettings = async (
     throw new Error(`Gagal menyimpan settings: ${error.message}`);
   }
 
-  if (!data || data.length === 0) return null;
+  if (!data) return null;
   return {
     adminWhatsApp: data.admin_whatsapp || "",
     shopeeStoreUrl: data.shopee_store_url || "",

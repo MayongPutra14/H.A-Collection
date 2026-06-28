@@ -20,7 +20,7 @@ export function getAdminSession(): AdminSession | null {
   }
 }
 
-export function isAuthenticated() {
+export function isAuthenticated(): boolean {
   return Boolean(getAdminSession());
 }
 

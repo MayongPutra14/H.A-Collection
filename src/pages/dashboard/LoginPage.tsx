@@ -4,14 +4,14 @@ import { Lock, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { loginAdmin } from "@/auth/ProtectedRoute";
+import { useSignIn } from "@/hooks/use-auth";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const signIn = useSignIn();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -27,17 +27,13 @@ export function LoginPage() {
       return;
     }
 
-    setPending(true);
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    loginAdmin({
-      email: email.trim(),
-      name: email.trim().split("@")[0] || "Admin",
-      loginAt: new Date().toISOString(),
-    });
-
-    navigate("/dashboard/overview", { replace: true });
+    signIn.mutate(
+      { email: email.trim(), password },
+      {
+        onSuccess: () => navigate("/dashboard/overview", { replace: true }),
+        onError: (err) => setError(err.message),
+      },
+    );
   };
 
   return (
@@ -93,9 +89,9 @@ export function LoginPage() {
           <Button
             type="submit"
             className="w-full h-12 bg-[#1f2e4f] hover:bg-[#1f2e4f]/90"
-            disabled={pending}
+            disabled={signIn.isPending}
           >
-            {pending ? "Signing in..." : "Sign In"}
+            {signIn.isPending ? "Signing in..." : "Sign In"}
           </Button>
         </form>
       </div>
