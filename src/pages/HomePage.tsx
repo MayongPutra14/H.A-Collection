@@ -27,10 +27,13 @@ export function HomePage() {
   const heroBanner = activeBanners[currentHero];
   const heroImage =
     heroBanner?.image_url ||
-    "https://6a2f8a18d2c53535166bdd7e.imgix.net/ha-collection/Untitled.jpg?auto=format&fit=crop&w=2000&q=80"; 
-  const heroTitle = heroBanner?.[lang === "en" ? "titleEn" : "title"] || heroBanner?.title || t("hero_title");
-  const heroSubtitle = heroBanner?.[lang === "en" ? "subtitleEn" : "subtitle"] || heroBanner?.subtitle || "";
-  const heroDescription = heroBanner?.[lang === "en" ? "descriptionEn" : "description"] || heroBanner?.description || "";
+    "https://xvvqckhgxofdepawhhqf.supabase.co/storage/v1/object/public/uploads/products/1782647665846-image.png";
+  const heroTitle =
+    heroBanner?.[lang === "en" ? "titleEn" : "title"] || heroBanner?.title || t("hero_title");
+  const heroSubtitle =
+    heroBanner?.[lang === "en" ? "subtitleEn" : "subtitle"] || heroBanner?.subtitle || "";
+  const heroDescription =
+    heroBanner?.[lang === "en" ? "descriptionEn" : "description"] || heroBanner?.description || "";
   const featured = products.slice(0, 4);
   const { data: categories = [] } = useCategories();
 
@@ -62,21 +65,41 @@ export function HomePage() {
   ];
 
   const reviews = [
-    { id: "1", name: "Sarah", textId: "Kainnya jatuh banget dan adem, super nyaman!", textEn: "The fabric drapes beautifully and is so breathable!" },
-    { id: "2", name: "Alya", textId: "Desainnya timeless dan nyaman dipakai sehari-hari.", textEn: "The design is timeless and comfortable for daily wear." },
-    { id: "3", name: "Maya", textId: "Kualitas premium dengan harga yang masih sangat masuk akal.", textEn: "Premium quality at a very reasonable price." },
-    { id: "4", name: "Dina", textId: "Jahitannya super rapi, sekelas butik mahal.", textEn: "The stitching is super neat, like an expensive boutique." },
+    {
+      id: "1",
+      name: "Sarah",
+      textId: "Kainnya jatuh banget dan adem, super nyaman!",
+      textEn: "The fabric drapes beautifully and is so breathable!",
+    },
+    {
+      id: "2",
+      name: "Alya",
+      textId: "Desainnya timeless dan nyaman dipakai sehari-hari.",
+      textEn: "The design is timeless and comfortable for daily wear.",
+    },
+    {
+      id: "3",
+      name: "Maya",
+      textId: "Kualitas premium dengan harga yang masih sangat masuk akal.",
+      textEn: "Premium quality at a very reasonable price.",
+    },
+    {
+      id: "4",
+      name: "Dina",
+      textId: "Jahitannya super rapi, sekelas butik mahal.",
+      textEn: "The stitching is super neat, like an expensive boutique.",
+    },
   ];
 
   return (
     <>
-      <section className="relative h-[70vh] min-h-[420px] w-full overflow-hidden">
+      <section className="relative h-[70vh] min-h-105 w-full overflow-hidden">
         <img
           src={heroImage}
           alt="H.A Collection hero"
           className="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/30 via-primary/20 to-primary/70" />
+        <div className="absolute inset-0 bg-linear-to-b from-primary/30 via-primary/20 to-primary/70" />
         <div className="relative z-10 mx-auto max-w-7xl px-6 h-full flex items-center pt-20 pb-12">
           <motion.div
             key={heroBanner?.id || currentHero}
@@ -113,9 +136,13 @@ export function HomePage() {
       >
         <div className="mx-auto max-w-7xl px-6 grid md:grid-cols-2 gap-6 md:gap-10 items-center">
           <div>
-            <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-2">The Brand Vibe</div>
+            <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-2">
+              The Brand Vibe
+            </div>
             <h2 className="font-serif text-2xl md:text-3xl lg:text-4xl mb-4">
-              {lang === "en" ? "Woven with elegance. Designed for the comfort of every step of the modern woman." : "Ditenun dengan keanggunan. Didesain untuk kenyamanan setiap langkah wanita modern."}
+              {lang === "en"
+                ? "Woven with elegance. Designed for the comfort of every step of the modern woman."
+                : "Ditenun dengan keanggunan. Didesain untuk kenyamanan setiap langkah wanita modern."}
             </h2>
           </div>
           <div className="overflow-hidden rounded-2xl">
@@ -147,14 +174,17 @@ export function HomePage() {
               <Link
                 key={category.id}
                 to={`/catalog?category=${category.name}`}
-                className="group relative aspect-[4/3] rounded-xl overflow-hidden"
+                className="group relative aspect-4/3 rounded-xl overflow-hidden"
               >
                 <img
-                  src={category.image_url || `https://images.unsplash.com/photo-1584273141181-e28dc5a0b938?auto=format&fit=crop&w=600&q=80&sig=${index}`}
+                  src={
+                    category.image_url ||
+                    `https://images.unsplash.com/photo-1584273141181-e28dc5a0b938?auto=format&fit=crop&w=600&q=80&sig=${index}`
+                  }
                   alt={category.name}
                   className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/20 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-b from-primary/80 via-primary/20 to-transparent" />
                 <div className="relative z-10 flex items-end h-full p-4">
                   <span className="text-primary-foreground font-serif text-lg group-hover:text-shadow-lg transition">
                     {category.name}
@@ -198,7 +228,7 @@ export function HomePage() {
           <h2 className="font-serif text-2xl md:text-3xl lg:text-4xl mb-6">
             {lang === "en" ? "The Lookbook" : "Lookbook"}
           </h2>
-          
+
           <div className="grid grid-flow-dense grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[200px] md:auto-rows-[240px]">
             {lookbookData.map((item, index) => (
               <div key={index} className={`overflow-hidden rounded-xl ${item.className}`}>
@@ -228,11 +258,11 @@ export function HomePage() {
             {lang === "en" ? "The Trust Builder" : "Kepercayaan Pelanggan"}
           </h2>
         </div>
-        
+
         <div className="relative flex overflow-hidden group">
-          <div className="flex animate-marquee group-hover:[animation-play-state:paused] whitespace-nowrap">
+          <div className="flex animate-marquee group-hover:paused whitespace-nowrap">
             {reviews.map((review, index) => (
-              <div key={`review-1-${index}`} className="flex-shrink-0 w-[300px] sm:w-[400px] mx-4">
+              <div key={`review-1-${index}`} className="shrink-0 w-75 sm:w-100 mx-4">
                 <blockquote className="bg-card border border-border rounded-xl p-6 sm:p-8 whitespace-normal">
                   <p className="font-serif italic text-base sm:text-lg text-foreground/80 leading-relaxed">
                     "{lang === "en" ? review.textEn : review.textId}"
@@ -244,9 +274,12 @@ export function HomePage() {
               </div>
             ))}
           </div>
-          <div className="flex animate-marquee group-hover:[animation-play-state:paused] whitespace-nowrap" aria-hidden="true">
+          <div
+            className="flex animate-marquee group-hover:paused whitespace-nowrap"
+            aria-hidden="true"
+          >
             {reviews.map((review, index) => (
-              <div key={`review-2-${index}`} className="flex-shrink-0 w-[300px] sm:w-[400px] mx-4">
+              <div key={`review-2-${index}`} className="shrink-0 w-75 sm:w-100 mx-4">
                 <blockquote className="bg-card border border-border rounded-xl p-6 sm:p-8 whitespace-normal">
                   <p className="font-serif italic text-base sm:text-lg text-foreground/80 leading-relaxed">
                     "{lang === "en" ? review.textEn : review.textId}"
