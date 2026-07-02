@@ -94,7 +94,7 @@ export const createProduct = async (input: CreateProductInput): Promise<Product>
     const { data: catData } = await supabase
       .from("categories")
       .select("id")
-      .eq("name", input.category)
+      .ilike("name", input.category.trim())
       .single();
     if (catData) {
       matchedCategoryId = catData.id;
@@ -127,7 +127,11 @@ export const createProduct = async (input: CreateProductInput): Promise<Product>
     description: { id: data.description_id || "", en: data.description_en || "" },
     price: Number(data.price),
     image_url: data.image_url || "",
-    images: data.images ? JSON.parse(data.images) : [],
+    images: data.images
+      ? typeof data.images === "string"
+        ? JSON.parse(data.images)
+        : data.images
+      : [],
     shopee_url: data.shopee_url || "",
     material: data.material || "",
     sizes: data.sizes || [],
@@ -145,7 +149,7 @@ export const updateProduct = async (id: string, input: UpdateProductInput): Prom
     const { data: catData } = await supabase
       .from("categories")
       .select("id")
-      .eq("name", input.category)
+      .ilike("name", input.category.trim())
       .single();
     if (catData) {
       matchedCategoryId = catData.id;
@@ -181,7 +185,11 @@ export const updateProduct = async (id: string, input: UpdateProductInput): Prom
     description: { id: data.description_id || "", en: data.description_en || "" },
     price: Number(data.price),
     image_url: data.image_url || "",
-    images: data.images ? JSON.parse(data.images) : [],
+    images: data.images
+      ? typeof data.images === "string"
+        ? JSON.parse(data.images)
+        : data.images
+      : [],
     shopee_url: data.shopee_url || "",
     material: data.material || "",
     sizes: data.sizes || [],
