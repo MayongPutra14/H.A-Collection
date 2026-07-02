@@ -5,7 +5,7 @@ export const BRAND = {
 };
 
 export const CONTACT = {
-  email: "hello@hacollection.id",
+  email: "hacollectionn1@gmail.com",
   phoneDisplay: "+62 812-3456-7890",
   whatsappNumber: "6281234567890",
 };

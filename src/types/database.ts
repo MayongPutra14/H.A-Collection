@@ -28,7 +28,7 @@ export type Product = {
   material: string | null;
   sizes: string[] | null;
   archived: boolean;
-  categories: number | null;
+  category_id: number | null;
 };
 
 export type StoreSetting = {

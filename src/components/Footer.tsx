@@ -70,7 +70,9 @@ export function Footer() {
       </div>
       <div className="border-t border-primary-foreground/10">
         <div className="mx-auto max-w-7xl px-6 py-5 text-xs text-primary-foreground/60 flex flex-col sm:flex-row justify-between items-center gap-2">
-          <span>© {new Date().getFullYear()} {BRAND.name}. All rights reserved.</span>
+          <span>
+            © {new Date().getFullYear()} {BRAND.name}. All rights reserved.
+          </span>
           <span>Designed with precision</span>
         </div>
       </div>

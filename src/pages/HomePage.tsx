@@ -39,11 +39,11 @@ export function HomePage() {
 
   const lookbookData = [
     {
-      src: "https://6a2f8a18d2c53535166bdd7e.imgix.net/ha-collection/114C3E13-7A2A-4A94-8D3D-03F23836090A.webp?auto=format&fit=crop&w=800&q=80",
+      src: "https://6a45bc5d29e4cbc974f02f2c.imgix.net/hacollection/WhatsApp Image 2026-07-02 at 08.25.01.jpeg",
       className: "col-span-2 row-span-2",
     },
     {
-      src: "https://6a2f8a18d2c53535166bdd7e.imgix.net/ha-collection/id-11134207-8224r-mjb3d1z2tjwl41.jpg",
+      src: "https://6a45bc5d29e4cbc974f02f2c.imgix.net/hacollection/WhatsApp Image 2026-07-02 at 08.25.01 (2).jpeg",
       className: "col-span-1 row-span-1",
     },
     {
@@ -93,14 +93,14 @@ export function HomePage() {
 
   return (
     <>
-      <section className="relative h-[70vh] min-h-105 w-full overflow-hidden">
+      <section className="relative h-screen min-h-105 w-full overflow-hidden">
         <img
           src={heroImage}
           alt="H.A Collection hero"
           className="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000"
         />
         <div className="absolute inset-0 bg-linear-to-b from-primary/30 via-primary/20 to-primary/70" />
-        <div className="relative z-10 mx-auto max-w-7xl px-6 h-full flex items-center pt-20 pb-12">
+        <div className="relative z-10 mx-auto max-w-7xl px-6 h-full flex items-center pt-32 pb-12">
           <motion.div
             key={heroBanner?.id || currentHero}
             initial={{ opacity: 0, y: 24 }}

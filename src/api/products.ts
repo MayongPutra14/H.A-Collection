@@ -7,13 +7,14 @@ import type {
 } from "@/types/product";
 
 export const listProducts = async (filters: ProductFilters = {}): Promise<Product[]> => {
-  let query = supabase.from("products").select("*");
+  let query = supabase.from("products").select(`*, categories(id, name)`);
   if (!filters.includeArchived) {
     query = query.eq("archived", false);
   }
 
   if (filters.category && filters.category !== "All") {
-    query = query.eq("categories", filters.category);
+    query = query.eq("categories.name", filters.category);
+    query = query.not("categories", "is", null);
   }
 
   if (filters.query) {
@@ -26,30 +27,38 @@ export const listProducts = async (filters: ProductFilters = {}): Promise<Produc
     return [];
   }
 
-  return data.map((item) => ({
-    id: String(item.id),
-    name: item.name,
-    description: {
-      id: item.description_id || "",
-      en: item.description_en || "",
-    },
-    price: Number(item.price),
-    image_url: item.image_url || "",
-    images: item.images ? JSON.parse(item.images) : [],
-    shopee_url: item.shopee_url || "",
-    material: item.material || "",
-    sizes: item.sizes || [],
-    archived: item.archived,
-    category: String(item.categories),
-    createdAt: item.created_at,
-    updatedAt: item.updated_at,
-  }));
+  return data.map((item) => {
+    const categoryName = item.categories ? item.categories.name : "";
+
+    return {
+      id: String(item.id),
+      name: item.name,
+      description: {
+        id: item.description_id || "",
+        en: item.description_en || "",
+      },
+      price: Number(item.price),
+      image_url: item.image_url || "",
+      images: item.images
+        ? typeof item.images === "string"
+          ? JSON.parse(item.images)
+          : item.images
+        : [],
+      shopee_url: item.shopee_url || "",
+      material: item.material || "",
+      sizes: item.sizes || [],
+      archived: item.archived,
+      category: String(categoryName),
+      createdAt: item.created_at,
+      updatedAt: item.updated_at,
+    };
+  });
 };
 
 export const getProductById = async (id: string): Promise<Product | null> => {
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+    .select(`*, categories(id, name)`)
     .eq("id", id)
     .single();
 
@@ -59,6 +68,7 @@ export const getProductById = async (id: string): Promise<Product | null> => {
   }
 
   if (!data) return null;
+  const categoryName = data.categories ? data.categories.name : "";
 
   return {
     id: String(data.id),
@@ -71,13 +81,26 @@ export const getProductById = async (id: string): Promise<Product | null> => {
     material: data.material || "",
     sizes: data.sizes || [],
     archived: data.archived,
-    category: String(data.categories),
+    category: String(categoryName),
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
 };
 
 export const createProduct = async (input: CreateProductInput): Promise<Product> => {
+  let matchedCategoryId: number | null = null;
+
+  if (input.category) {
+    const { data: catData } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("name", input.category)
+      .single();
+    if (catData) {
+      matchedCategoryId = catData.id;
+    }
+  }
+
   const { data, error } = await supabase
     .from("products")
     .insert({
@@ -90,13 +113,14 @@ export const createProduct = async (input: CreateProductInput): Promise<Product>
       shopee_url: input.shopee_url,
       material: input.material,
       sizes: input.sizes,
-      categories: input.category,
+      category_id: matchedCategoryId,
       archived: input.archived ?? false,
     })
-    .select()
+    .select(`*, categories(id, name)`)
     .single();
 
   if (error || !data) throw new Error(`Failed to create product: ${error?.message}`);
+  const categoryName = data.categories ? data.categories.name : "";
   return {
     id: String(data.id),
     name: data.name,
@@ -108,13 +132,26 @@ export const createProduct = async (input: CreateProductInput): Promise<Product>
     material: data.material || "",
     sizes: data.sizes || [],
     archived: data.archived,
-    category: String(data.categories),
+    category: String(categoryName),
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
 };
 
 export const updateProduct = async (id: string, input: UpdateProductInput): Promise<Product> => {
+  let matchedCategoryId: number | null = null;
+
+  if (input.category) {
+    const { data: catData } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("name", input.category)
+      .single();
+    if (catData) {
+      matchedCategoryId = catData.id;
+    }
+  }
+
   const { data, error } = await supabase
     .from("products")
     .update({
@@ -127,15 +164,17 @@ export const updateProduct = async (id: string, input: UpdateProductInput): Prom
       shopee_url: input.shopee_url,
       material: input.material,
       sizes: input.sizes,
-      categories: input.category,
+      category_id: matchedCategoryId,
       archived: input.archived,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
-    .select()
+    .select(`*, categories(id, name)`)
     .single();
 
   if (error || !data) throw new Error(error?.message);
+
+  const categoryName = data.categories ? data.categories.name : "";
   return {
     id: String(data.id),
     name: data.name,
@@ -147,7 +186,7 @@ export const updateProduct = async (id: string, input: UpdateProductInput): Prom
     material: data.material || "",
     sizes: data.sizes || [],
     archived: data.archived,
-    category: String(data.categories),
+    category: String(categoryName),
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
